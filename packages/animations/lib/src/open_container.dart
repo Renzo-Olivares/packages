@@ -68,6 +68,41 @@ typedef ClosedCallback<S> = void Function(S data);
 /// is closed. This value can be accessed in the `onClosed` function.
 ///
 // TODO(goderbauer): Add example animations and sample code.
+/// {@tool snippet}
+/// This example shows how to create an [OpenContainer] that shows a [Container]
+/// surrounded by an [InkWell] while the container is closed. When the container
+/// is tapped it grows to fill the entire screen fading out the closed widget
+/// and fading in a [Scaffold] that contains a centered [Text] widget using the
+/// [ContainerTransitionType.fadeThrough] to do the transition.
+///
+/// ![](image link placeholder)
+///
+/// ```dart
+/// OpenContainer(
+///   transitionType: ContainerTransitionType.fadeThrough,
+///   openBuilder: (BuildContext context, VoidCallback openBuilder) {
+///     return Scaffold(
+///       appBar: AppBar(),
+///       body: Center(
+///         child: Text('Open Container'),
+///       ),
+///     );
+///   },
+///   closedBuilder: (BuildContext context, VoidCallback openBuilder) {
+///     return InkWell(
+///       onTap: openBuilder,
+///       child: Container(
+///         height: 200,
+///         width: 400,
+///         child: Center(
+///           child: Text('Closed Container'),
+///         ),
+///       ),
+///     );
+///   },
+/// )
+/// ```
+/// {@end-tool}
 ///
 /// See also:
 ///
