@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@Skip(
-  'This file is skipped due to a cross-import that needs to be fixed. Tracked in https://github.com/flutter/flutter/issues/177028.',
-)
 // reduced-test-set:
 //   This file is run as part of a reduced test set in CI on Mac and Windows
 //   machines.
@@ -17,8 +14,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../widgets/semantics_tester.dart';
 
 void main() {
   testWidgets('Radio control test', (WidgetTester tester) async {
@@ -146,168 +141,169 @@ void main() {
   });
 
   testWidgets('Radio selected semantics - platform adaptive', (WidgetTester tester) async {
-    final semantics = SemanticsTester(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 1, onChanged: (int? i) {})),
+        ),
+      );
 
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 1, onChanged: (int? i) {})),
-      ),
-    );
-
-    final bool isApple =
-        defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
-    expect(
-      semantics,
-      includesNodeWith(
-        flags: <SemanticsFlag>[
-          SemanticsFlag.isInMutuallyExclusiveGroup,
-          SemanticsFlag.hasCheckedState,
-          SemanticsFlag.hasEnabledState,
-          SemanticsFlag.isEnabled,
-          SemanticsFlag.isFocusable,
-          SemanticsFlag.isChecked,
-          if (isApple) SemanticsFlag.hasSelectedState,
-          if (isApple) SemanticsFlag.isSelected,
-        ],
-        actions: <SemanticsAction>[
-          SemanticsAction.tap,
-          if (defaultTargetPlatform != TargetPlatform.iOS) SemanticsAction.focus,
-        ],
-      ),
-    );
-    semantics.dispose();
+      final bool isApple =
+          defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS;
+      expect(
+        tester.getSemantics(find.byType(CupertinoRadio<int>)),
+        isSemantics(
+          isInMutuallyExclusiveGroup: true,
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+          isChecked: true,
+          hasSelectedState: isApple ? true : null,
+          isSelected: isApple ? true : null,
+          hasTapAction: true,
+          hasFocusAction: defaultTargetPlatform != TargetPlatform.iOS ? true : null,
+        ),
+      );
+    } finally {
+      handle.dispose();
+    }
   }, variant: TargetPlatformVariant.all());
 
   testWidgets('Radio semantics', (WidgetTester tester) async {
-    final semantics = SemanticsTester(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 2, onChanged: (int? i) {})),
+        ),
+      );
 
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 2, onChanged: (int? i) {})),
-      ),
-    );
+      expect(
+        tester.getSemantics(find.byType(Focus).last),
+        matchesSemantics(
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+          isFocusable: true,
+          isInMutuallyExclusiveGroup: true,
+        ),
+      );
 
-    expect(
-      tester.getSemantics(find.byType(Focus).last),
-      matchesSemantics(
-        hasCheckedState: true,
-        hasEnabledState: true,
-        isEnabled: true,
-        hasTapAction: true,
-        hasFocusAction: true,
-        isFocusable: true,
-        isInMutuallyExclusiveGroup: true,
-      ),
-    );
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Center(child: CupertinoRadio<int>(value: 2, groupValue: 2, onChanged: (int? i) {})),
+        ),
+      );
 
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(child: CupertinoRadio<int>(value: 2, groupValue: 2, onChanged: (int? i) {})),
-      ),
-    );
+      expect(
+        tester.getSemantics(find.byType(Focus).last),
+        matchesSemantics(
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+          hasFocusAction: true,
+          isFocusable: true,
+          isInMutuallyExclusiveGroup: true,
+          isChecked: true,
+        ),
+      );
 
-    expect(
-      tester.getSemantics(find.byType(Focus).last),
-      matchesSemantics(
-        hasCheckedState: true,
-        hasEnabledState: true,
-        isEnabled: true,
-        hasTapAction: true,
-        hasFocusAction: true,
-        isFocusable: true,
-        isInMutuallyExclusiveGroup: true,
-        isChecked: true,
-      ),
-    );
+      await tester.pumpWidget(
+        const CupertinoApp(home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 2))),
+      );
 
-    await tester.pumpWidget(
-      const CupertinoApp(home: Center(child: CupertinoRadio<int>(value: 1, groupValue: 2))),
-    );
+      expect(
+        tester.getSemantics(find.byType(Focus).last),
+        matchesSemantics(
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isFocusable: true,
+          isInMutuallyExclusiveGroup: true,
+          hasFocusAction: true,
+        ),
+      );
 
-    expect(
-      tester.getSemantics(find.byType(Focus).last),
-      matchesSemantics(
-        hasCheckedState: true,
-        hasEnabledState: true,
-        isFocusable: true,
-        isInMutuallyExclusiveGroup: true,
-        hasFocusAction: true,
-      ),
-    );
+      await tester.pump();
 
-    await tester.pump();
+      // Now the isFocusable should be gone.
+      expect(
+        tester.getSemantics(find.byType(Focus).last),
+        matchesSemantics(
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isInMutuallyExclusiveGroup: true,
+        ),
+      );
 
-    // Now the isFocusable should be gone.
-    expect(
-      tester.getSemantics(find.byType(Focus).last),
-      matchesSemantics(
-        hasCheckedState: true,
-        hasEnabledState: true,
-        isInMutuallyExclusiveGroup: true,
-      ),
-    );
+      await tester.pumpWidget(
+        const CupertinoApp(home: Center(child: CupertinoRadio<int>(value: 2, groupValue: 2))),
+      );
 
-    await tester.pumpWidget(
-      const CupertinoApp(home: Center(child: CupertinoRadio<int>(value: 2, groupValue: 2))),
-    );
-
-    expect(
-      tester.getSemantics(find.byType(Focus).last),
-      matchesSemantics(
-        hasCheckedState: true,
-        hasEnabledState: true,
-        isChecked: true,
-        isInMutuallyExclusiveGroup: true,
-      ),
-    );
-
-    semantics.dispose();
+      expect(
+        tester.getSemantics(find.byType(Focus).last),
+        matchesSemantics(
+          hasCheckedState: true,
+          hasEnabledState: true,
+          isChecked: true,
+          isInMutuallyExclusiveGroup: true,
+        ),
+      );
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('has semantic events', (WidgetTester tester) async {
-    final semantics = SemanticsTester(tester);
-    final Key key = UniqueKey();
-    dynamic semanticEvent;
-    int? radioValue = 2;
-    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
-      SystemChannels.accessibility,
-      (dynamic message) async {
-        semanticEvent = message;
-      },
-    );
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      final Key key = UniqueKey();
+      dynamic semanticEvent;
+      int? radioValue = 2;
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
+        SystemChannels.accessibility,
+        (dynamic message) async {
+          semanticEvent = message;
+        },
+      );
 
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoRadio<int>(
-            key: key,
-            value: 1,
-            groupValue: radioValue,
-            onChanged: (int? i) {
-              radioValue = i;
-            },
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Center(
+            child: CupertinoRadio<int>(
+              key: key,
+              value: 1,
+              groupValue: radioValue,
+              onChanged: (int? i) {
+                radioValue = i;
+              },
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.byKey(key));
-    final RenderObject object = tester.firstRenderObject(find.byKey(key));
+      await tester.tap(find.byKey(key));
+      final RenderObject object = tester.firstRenderObject(find.byKey(key));
 
-    expect(radioValue, 1);
-    expect(semanticEvent, <String, dynamic>{
-      'type': 'tap',
-      'nodeId': object.debugSemantics!.id,
-      'data': <String, dynamic>{},
-    });
-    expect(object.debugSemantics!.getSemanticsData().hasAction(SemanticsAction.tap), true);
-
-    semantics.dispose();
-    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
-      SystemChannels.accessibility,
-      null,
-    );
+      expect(radioValue, 1);
+      expect(semanticEvent, <String, dynamic>{
+        'type': 'tap',
+        'nodeId': object.debugSemantics!.id,
+        'data': <String, dynamic>{},
+      });
+      expect(object.debugSemantics!.getSemanticsData().hasAction(SemanticsAction.tap), true);
+    } finally {
+      handle.dispose();
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
+        SystemChannels.accessibility,
+        null,
+      );
+    }
   });
 
   testWidgets('Radio can be controlled by keyboard shortcuts', (WidgetTester tester) async {
