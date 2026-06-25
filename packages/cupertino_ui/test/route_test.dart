@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@Skip(
-  'This file is skipped due to a cross-import that needs to be fixed. Tracked in https://github.com/flutter/flutter/issues/177028.',
-)
+// ignore_for_file: only_throw_errors, unawaited_futures
+
 @TestOn('!chrome')
 library;
 
@@ -14,8 +13,6 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../widgets/semantics_tester.dart';
 
 void main() {
   late MockNavigatorObserver navigatorObserver;
@@ -2045,87 +2042,82 @@ void main() {
     WidgetTester tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final semantics = SemanticsTester(tester);
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Navigator(
-          onGenerateRoute: (RouteSettings settings) {
-            return PageRouteBuilder<dynamic>(
-              pageBuilder: (BuildContext context, Animation<double> _, Animation<double> _) {
-                return GestureDetector(
-                  onTap: () async {
-                    await showCupertinoModalPopup<void>(
-                      context: context,
-                      builder: (BuildContext context) => const SizedBox(),
-                    );
-                  },
-                  child: const Text('tap'),
-                );
-              },
-            );
-          },
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Navigator(
+            onGenerateRoute: (RouteSettings settings) {
+              return PageRouteBuilder<dynamic>(
+                pageBuilder: (BuildContext context, Animation<double> _, Animation<double> _) {
+                  return GestureDetector(
+                    onTap: () async {
+                      await showCupertinoModalPopup<void>(
+                        context: context,
+                        builder: (BuildContext context) => const SizedBox(),
+                      );
+                    },
+                    child: const Text('tap'),
+                  );
+                },
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
 
-    // Push the route.
-    await tester.tap(find.text('tap'));
-    await tester.pumpAndSettle();
+      // Push the route.
+      await tester.tap(find.text('tap'));
+      await tester.pumpAndSettle();
 
-    expect(
-      semantics,
-      isNot(
-        includesNodeWith(
-          actions: <SemanticsAction>[SemanticsAction.tap, SemanticsAction.focus],
-          label: 'Dismiss',
-        ),
-      ),
-    );
-    debugDefaultTargetPlatformOverride = null;
-    semantics.dispose();
+      expect(find.semantics.byLabel('Dismiss'), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+      handle.dispose();
+    }
   });
 
   testWidgets('showCupertinoModalPopup allows for semantics dismiss when set', (
     WidgetTester tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final semantics = SemanticsTester(tester);
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Navigator(
-          onGenerateRoute: (RouteSettings settings) {
-            return PageRouteBuilder<dynamic>(
-              pageBuilder: (BuildContext context, Animation<double> _, Animation<double> _) {
-                return GestureDetector(
-                  onTap: () async {
-                    await showCupertinoModalPopup<void>(
-                      context: context,
-                      semanticsDismissible: true,
-                      builder: (BuildContext context) => const SizedBox(),
-                    );
-                  },
-                  child: const Text('tap'),
-                );
-              },
-            );
-          },
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Navigator(
+            onGenerateRoute: (RouteSettings settings) {
+              return PageRouteBuilder<dynamic>(
+                pageBuilder: (BuildContext context, Animation<double> _, Animation<double> _) {
+                  return GestureDetector(
+                    onTap: () async {
+                      await showCupertinoModalPopup<void>(
+                        context: context,
+                        semanticsDismissible: true,
+                        builder: (BuildContext context) => const SizedBox(),
+                      );
+                    },
+                    child: const Text('tap'),
+                  );
+                },
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
 
-    // Push the route.
-    await tester.tap(find.text('tap'));
-    await tester.pumpAndSettle();
+      // Push the route.
+      await tester.tap(find.text('tap'));
+      await tester.pumpAndSettle();
 
-    expect(
-      semantics,
-      includesNodeWith(
-        actions: <SemanticsAction>[SemanticsAction.tap, SemanticsAction.dismiss],
-        label: 'Dismiss',
-      ),
-    );
-    debugDefaultTargetPlatformOverride = null;
-    semantics.dispose();
+      expect(
+        find.semantics.byLabel('Dismiss'),
+        isSemantics(label: 'Dismiss', hasTapAction: true, hasDismissAction: true),
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+      handle.dispose();
+    }
   });
 
   testWidgets('showCupertinoModalPopup passes RouteSettings to PopupRoute', (
