@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@Skip(
-  'This file is skipped due to a cross-import that needs to be fixed. Tracked in https://github.com/flutter/flutter/issues/177028.',
-)
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -12,8 +9,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../widgets/semantics_tester.dart';
 
 const TextStyle testStyle = TextStyle(fontSize: 10.0, letterSpacing: 0.0);
 
@@ -348,34 +343,29 @@ void main() {
   });
 
   testWidgets('Cupertino button is semantically a button', (WidgetTester tester) async {
-    final semantics = SemanticsTester(tester);
-    await tester.pumpWidget(
-      boilerplate(
-        child: Center(
-          child: CupertinoButton(onPressed: () {}, child: const Text('ABC')),
+    final SemanticsHandle handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        boilerplate(
+          child: Center(
+            child: CupertinoButton(onPressed: () {}, child: const Text('ABC')),
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(
-      semantics,
-      hasSemantics(
-        TestSemantics.root(
-          children: <TestSemantics>[
-            TestSemantics.rootChild(
-              actions: SemanticsAction.tap.index | SemanticsAction.focus.index,
-              label: 'ABC',
-              flags: <SemanticsFlag>[SemanticsFlag.isButton, SemanticsFlag.isFocusable],
-            ),
-          ],
+      expect(
+        tester.getSemantics(find.text('ABC')),
+        isSemantics(
+          label: 'ABC',
+          isButton: true,
+          isFocusable: true,
+          hasTapAction: true,
+          hasFocusAction: true,
         ),
-        ignoreId: true,
-        ignoreRect: true,
-        ignoreTransform: true,
-      ),
-    );
-
-    semantics.dispose();
+      );
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('Can specify colors', (WidgetTester tester) async {
